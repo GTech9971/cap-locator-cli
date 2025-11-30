@@ -1,0 +1,117 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Locator: list",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "list"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Locator: status (feature report)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "status",
+                "--status-index",
+                "2",
+                "--report-id",
+                "0",
+                "--command-status",
+                "1",
+                "--report-len",
+                "64"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Locator: LED ON",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "on",
+                "--report-id",
+                "0",
+                "--command-set",
+                "2",
+                "--report-len",
+                "64",
+                "--on-value",
+                "0x0c"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Locator: LED OFF (all)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "off",
+                "--report-id",
+                "0",
+                "--command-set",
+                "2",
+                "--report-len",
+                "64",
+                "--off-value",
+                "0x00"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Locator: LED mask (RC4のみON、RC5 OFF)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "off",
+                "--report-id",
+                "0",
+                "--command-set",
+                "2",
+                "--report-len",
+                "64",
+                "--off-value",
+                "0x04"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        },
+        {
+            "name": "Locator: LED mask (RC5のみON、RC4 OFF)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/cap-locator-cli",
+            "args": [
+                "off",
+                "--report-id",
+                "0",
+                "--command-set",
+                "2",
+                "--report-len",
+                "64",
+                "--off-value",
+                "0x08"
+            ],
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "preLaunchTask": "build"
+        }
+    ]
+}
