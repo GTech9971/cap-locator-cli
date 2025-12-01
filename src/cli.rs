@@ -40,9 +40,6 @@ pub struct StatusArgs {
     pub filter: FilterArgs,
     #[command(flatten)]
     pub protocol: ProtocolArgs,
-    /// ステータス応答の何バイト目をLED状態として解釈するか(0始まり)
-    #[arg(long, default_value_t = 2)]
-    pub status_index: usize,
 }
 
 #[derive(Args, Clone, Debug)]
@@ -54,10 +51,10 @@ pub struct SetArgs {
     pub filter: FilterArgs,
     #[command(flatten)]
     pub protocol: ProtocolArgs,
-    /// LED ONに送る値
-    #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 1)]
+    /// RC2〜RC5/RA4のビットマスク(1=ON)でLED ON時に送る値
+    #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 0x1f)]
     pub on_value: u8,
-    /// LED OFFに送る値
+    /// RC2〜RC5/RA4のビットマスク(1=ON)でLED OFF時に送る値
     #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 0)]
     pub off_value: u8,
 }
@@ -80,16 +77,10 @@ pub struct FilterArgs {
 
 #[derive(Args, Clone, Debug)]
 pub struct ProtocolArgs {
-    /// 使用するreport id
-    #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 0)]
-    pub report_id: u8,
-    /// feature reportの長さ(バイト)
-    #[arg(long, default_value_t = 8)]
+    /// 入出力レポートの長さ(バイト)。不足分は0埋めで送信します
+    #[arg(long, default_value_t = 64)]
     pub report_len: usize,
-    /// ステータス問い合わせで使うコマンド値
-    #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 0x01)]
-    pub command_status: u8,
-    /// LED ON/OFFの指示で使うコマンド値
-    #[arg(long, value_parser = parse_hex_or_dec_u8, default_value_t = 0x02)]
-    pub command_set: u8,
+    /// 入力レポートを待つタイムアウト(ms)
+    #[arg(long, default_value_t = 1000)]
+    pub read_timeout_ms: i32,
 }

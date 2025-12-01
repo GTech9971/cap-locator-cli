@@ -75,34 +75,31 @@ fn merge_filter_fills_missing_from_env() {
 
 // HID通信ロジックのモックテスト
 #[test]
-fn query_status_uses_status_index_and_records_command() {
-    let device = MockDevice::with_response(vec![0x05, 0x01, 0x99, 0x00]);
+fn query_status_reads_mask_and_records_command() {
+    let device = MockDevice::with_response(vec![0xff, 0x19, 0x00]);
     let protocol = ProtocolArgs {
-        report_id: 0x05,
         report_len: 4,
-        command_status: 0x10,
-        command_set: 0x20,
+        read_timeout_ms: 100,
     };
 
-    let status = query_status(&device, &protocol, 2).unwrap();
+    let status = query_status(&device, &protocol).unwrap();
     assert!(status.is_on);
-    assert_eq!(device.last_sent().unwrap(), vec![0x05, 0x10, 0x00, 0x00]);
-    assert_eq!(status.raw, vec![0x05, 0x01, 0x99, 0x00]);
+    assert_eq!(status.mask, 0x19);
+    assert_eq!(device.last_sent().unwrap(), vec![0x01, 0x00, 0x00, 0x00]);
+    assert_eq!(status.raw, vec![0xff, 0x19, 0x00]);
 }
 
 #[test]
 fn set_light_sends_on_and_off_commands() {
     let device = MockDevice::with_response(vec![0x00]);
     let protocol = ProtocolArgs {
-        report_id: 0x07,
         report_len: 4,
-        command_status: 0x01,
-        command_set: 0xAA,
+        read_timeout_ms: 100,
     };
 
     set_light(&device, &protocol, true, 0x11, 0x22).unwrap();
-    assert_eq!(device.last_sent().unwrap(), vec![0x07, 0xAA, 0x11, 0x00]);
+    assert_eq!(device.last_sent().unwrap(), vec![0x02, 0x11, 0x00, 0x00]);
 
     set_light(&device, &protocol, false, 0x11, 0x22).unwrap();
-    assert_eq!(device.last_sent().unwrap(), vec![0x07, 0xAA, 0x22, 0x00]);
+    assert_eq!(device.last_sent().unwrap(), vec![0x02, 0x22, 0x00, 0x00]);
 }

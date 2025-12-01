@@ -34,7 +34,7 @@ pub fn handle_list(api: &HidApi, args: &ListArgs, env: &EnvDefaults) -> Result<(
 /// 対象locatorのLED点灯状態を問い合わせて表示する
 ///
 /// - .env/CLIのフィルタでデバイスを絞り込み、`id`が指定されていればさらに絞る
-/// - Feature Reportでステータスコマンドを送信し、指定バイトを0/非0で判定
+/// - Output Reportでステータスコマンドを送信し、応答(先頭0xff)のLEDマスクで判定
 pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
     let mut devices = snapshot_devices(api, &filter);
@@ -53,17 +53,18 @@ pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Resu
             .with_context(|| format!("open device {}", locator_id))?;
 
         let status =
-            query_status(&handle, &args.protocol, args.status_index).with_context(|| {
+            query_status(&handle, &args.protocol).with_context(|| {
                 format!(
-                    "ステータス取得に失敗しました (id={}, report_id=0x{:02x})",
-                    locator_id, args.protocol.report_id
+                    "ステータス取得に失敗しました (id={})",
+                    locator_id
                 )
             })?;
 
         println!(
-            "id={:<20} status={} raw=[{}]",
+            "id={:<20} status={} mask=0x{mask:02x} raw=[{}]",
             locator_id,
             if status.is_on { "on " } else { "off" },
+            mask = status.mask,
             format_bytes(&status.raw)
         );
     }
@@ -74,7 +75,7 @@ pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Resu
 /// 単一のlocatorに対してLED点灯/消灯コマンドを送信する
 ///
 /// - .env/CLIのフィルタでデバイスを検索し、`id`一致が1件になるように要求
-/// - Feature ReportでON/OFF値を送信し、成功したら結果を表示
+/// - Output ReportでON/OFF値を送信し、成功したら結果を表示
 pub fn handle_set(api: &HidApi, args: &SetArgs, env: &EnvDefaults, turn_on: bool) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
     let device = pick_single_device(api, &filter, &args.id)?;
@@ -92,8 +93,8 @@ pub fn handle_set(api: &HidApi, args: &SetArgs, env: &EnvDefaults, turn_on: bool
     )
     .with_context(|| {
         format!(
-            "LED制御に失敗しました (id={}, report_id=0x{:02x})",
-            locator_id, args.protocol.report_id
+            "LED制御に失敗しました (id={})",
+            locator_id
         )
     })?;
 

@@ -1,21 +1,27 @@
 use std::ffi::CString;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use hidapi::{HidApi, HidDevice};
+
+use crate::util::format_bytes;
+
+const COMMAND_STATUS: u8 = 0x01;
+const COMMAND_SET: u8 = 0x02;
+const RESPONSE_HEADER: u8 = 0xFF;
 
 /// HIDデバイスIOを抽象化するトレイト（テストでモックしやすくするため）
 pub trait HidDeviceIo {
-    fn send_feature_report(&self, data: &[u8]) -> hidapi::HidResult<()>;
-    fn get_feature_report(&self, data: &mut [u8]) -> hidapi::HidResult<usize>;
+    fn write(&self, data: &[u8]) -> hidapi::HidResult<usize>;
+    fn read_timeout(&self, data: &mut [u8], timeout_ms: i32) -> hidapi::HidResult<usize>;
 }
 
 impl HidDeviceIo for HidDevice {
-    fn send_feature_report(&self, data: &[u8]) -> hidapi::HidResult<()> {
-        HidDevice::send_feature_report(self, data)
+    fn write(&self, data: &[u8]) -> hidapi::HidResult<usize> {
+        HidDevice::write(self, data)
     }
 
-    fn get_feature_report(&self, data: &mut [u8]) -> hidapi::HidResult<usize> {
-        HidDevice::get_feature_report(self, data)
+    fn read_timeout(&self, data: &mut [u8], timeout_ms: i32) -> hidapi::HidResult<usize> {
+        HidDevice::read_timeout(self, data, timeout_ms)
     }
 }
 
@@ -70,6 +76,7 @@ impl DeviceDescriptor {
 
 pub struct LocatorStatus {
     pub is_on: bool,
+    pub mask: u8,
     pub raw: Vec<u8>,
 }
 
@@ -103,28 +110,37 @@ pub fn pick_single_device(api: &HidApi, filter: &FilterArgs, id: &str) -> Result
 pub fn query_status(
     device: &dyn HidDeviceIo,
     protocol: &ProtocolArgs,
-    status_index: usize,
 ) -> Result<LocatorStatus> {
-    let report_len = protocol.report_len.max(status_index + 1).max(2);
+    let report_len = protocol.report_len.max(2);
 
     let mut request = vec![0u8; report_len];
-    request[0] = protocol.report_id;
-    request[1] = protocol.command_status;
+    request[0] = COMMAND_STATUS;
     device
-        .send_feature_report(&request)
-        .context("feature report送信に失敗")?;
+        .write(&request)
+        .context("output report送信に失敗")?;
 
     let mut response = vec![0u8; report_len];
-    response[0] = protocol.report_id;
     let received = device
-        .get_feature_report(&mut response)
-        .context("feature report受信に失敗")?;
+        .read_timeout(&mut response, protocol.read_timeout_ms)
+        .context("input report受信に失敗")?;
     response.truncate(received);
 
-    let is_on = response.get(status_index).copied().unwrap_or_default() != 0;
+    if response.first().copied() != Some(RESPONSE_HEADER) {
+        bail!(
+            "応答先頭が0xFFではありません: [{}]",
+            format_bytes(&response)
+        );
+    }
+
+    let mask = response
+        .get(1)
+        .copied()
+        .ok_or_else(|| anyhow!("LED状態のバイトが不足しています: [{}]", format_bytes(&response)))?;
+    let is_on = mask != 0;
 
     Ok(LocatorStatus {
         is_on,
+        mask,
         raw: response,
     })
 }
@@ -136,15 +152,14 @@ pub fn set_light(
     on_value: u8,
     off_value: u8,
 ) -> Result<()> {
-    let report_len = protocol.report_len.max(3);
+    let report_len = protocol.report_len.max(2);
     let mut report = vec![0u8; report_len];
-    report[0] = protocol.report_id;
-    report[1] = protocol.command_set;
-    report[2] = if turn_on { on_value } else { off_value };
+    report[0] = COMMAND_SET;
+    report[1] = if turn_on { on_value } else { off_value };
 
     device
-        .send_feature_report(&report)
-        .context("feature report送信に失敗")?;
+        .write(&report)
+        .context("output report送信に失敗")?;
     Ok(())
 }
 
@@ -202,12 +217,12 @@ pub mod mock {
     }
 
     impl HidDeviceIo for MockDevice {
-        fn send_feature_report(&self, data: &[u8]) -> hidapi::HidResult<()> {
+        fn write(&self, data: &[u8]) -> hidapi::HidResult<usize> {
             self.sent.borrow_mut().push(data.to_vec());
-            Ok(())
+            Ok(data.len())
         }
 
-        fn get_feature_report(&self, data: &mut [u8]) -> hidapi::HidResult<usize> {
+        fn read_timeout(&self, data: &mut [u8], _timeout_ms: i32) -> hidapi::HidResult<usize> {
             let response = self.next_response.borrow_mut().take().ok_or_else(|| {
                 HidError::HidApiError {
                     message: "mock response not set".to_string(),
