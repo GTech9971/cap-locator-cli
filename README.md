@@ -40,7 +40,7 @@ cargo run -- list
 cargo run -- status
 ```
 
-フィルタに一致するlocatorをすべて表示します。
+フィルタに一致するlocatorをすべて表示します。`--id <locator-id>` を付けると特定のlocatorだけ確認します。`locator-id` はシリアル番号があればそれを、なければHIDパスを参照します（部分一致も可）。
 
 ### LED点灯/消灯
 
@@ -52,12 +52,13 @@ cargo run -- on
 cargo run -- off
 ```
 
-フィルタに合致するデバイスが1台ならそれを対象にします。複数見つかった場合はエラーになるので、`--vendor-id` / `--product-id` / `--usage-page` / `--usage` で絞り込んでください。`--on-value` / `--off-value` でRC2〜RC5/RA4のビットマスクを指定できます（デフォルトは0x1f/0x00）。設定後はデバイスからステータス応答を受信し、`status` コマンドと同形式で表示します。
+フィルタに合致するデバイスが1台ならそれを対象にします。複数見つかった場合はエラーになるので、`--id` でシリアル番号を指定するか、`--vendor-id` / `--product-id` / `--usage-page` / `--usage` で絞り込んでください。`--on-value` / `--off-value` でRC2〜RC5/RA4のビットマスクを指定できます（デフォルトは0x1f/0x00）。設定後はデバイスからステータス応答を受信し、`status` コマンドと同形式で表示します。
 
 ## オプション早見表
 
 - `--vendor-id`, `--product-id` : ベンダー/プロダクトでフィルタ (Cap Locatorは 0x04d8 / 0x1455)
 - `--usage-page`, `--usage` : HID Usageでフィルタ (Cap Locatorは 0xFF00 / 0x0001)
+- `--id` : シリアル番号（またはHIDパス部分文字列）で特定のlocatorを選択
 - `--report-len` : IN/OUTレポート長（デフォルト64バイト。足りない分は0埋め）
 - `--read-timeout-ms` : ステータス取得時に入力レポートを待つ時間 (デフォルト1000ms)
 - `--on-value` / `--off-value` : 点灯/消灯指示で送るLEDマスク (デフォルト0x1f / 0x00)

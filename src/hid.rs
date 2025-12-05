@@ -69,6 +69,18 @@ impl DeviceDescriptor {
             .clone()
             .unwrap_or_else(|| self.path.to_string_lossy().into_owned())
     }
+
+    pub fn matches_id(&self, query: &str) -> bool {
+        if query.is_empty() {
+            return false;
+        }
+        let serial_match = self
+            .serial_number
+            .as_ref()
+            .map(|serial| serial == query || serial.contains(query))
+            .unwrap_or(false);
+        serial_match || self.path.to_string_lossy().contains(query)
+    }
 }
 
 pub struct LocatorStatus {
@@ -89,14 +101,25 @@ pub fn snapshot_devices(api: &HidApi, filter: &FilterArgs) -> Vec<DeviceDescript
     devices
 }
 
-pub fn pick_single_device(api: &HidApi, filter: &FilterArgs) -> Result<DeviceDescriptor> {
-    let candidates = snapshot_devices(api, filter);
+pub fn pick_single_device(api: &HidApi, filter: &FilterArgs, id: Option<&str>) -> Result<DeviceDescriptor> {
+    let mut candidates = snapshot_devices(api, filter);
+    if let Some(id) = id {
+        if !id.is_empty() {
+            candidates.retain(|d| d.matches_id(id));
+        }
+    }
 
     match candidates.len() {
-        0 => Err(anyhow!("フィルタに一致するlocatorがありませんでした")),
+        0 => {
+            if let Some(id) = id {
+                Err(anyhow!("一致するlocatorがありませんでした: {}", id))
+            } else {
+                Err(anyhow!("フィルタに一致するlocatorがありませんでした"))
+            }
+        }
         1 => Ok(candidates.into_iter().next().unwrap()),
         _ => Err(anyhow!(
-            "複数のlocatorが見つかりました。vendor/productやusageで絞り込んでください"
+            "複数のlocatorが見つかりました。idを指定するか、vendor/productやusageで絞り込んでください"
         )),
     }
 }

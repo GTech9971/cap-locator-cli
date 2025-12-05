@@ -20,19 +20,19 @@ pub fn handle_list(api: &HidApi, args: &ListArgs, env: &EnvDefaults) -> Result<(
 
     for device in devices {
         let locator_id = device.locator_id();
+        let serial = device
+            .serial_number
+            .clone()
+            .unwrap_or_else(|| "-".to_string());
         let path = device.path.to_string_lossy();
-        let path_suffix = if locator_id == path {
-            String::new()
-        } else {
-            format!(" path={}", path)
-        };
         println!(
-            "id={:<20} vendor=0x{:04x} product=0x{:04x} usage={}{}",
+            "id={:<20} serial={:<20} vendor=0x{:04x} product=0x{:04x} usage={} path={}",
             locator_id,
+            serial,
             device.vendor_id,
             device.product_id,
             format_usage(device.usage_page, device.usage),
-            path_suffix
+            path
         );
     }
     Ok(())
@@ -44,7 +44,10 @@ pub fn handle_list(api: &HidApi, args: &ListArgs, env: &EnvDefaults) -> Result<(
 /// - Output Reportでステータスコマンドを送信し、応答(先頭0xff)のLEDマスクで判定
 pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
-    let devices = snapshot_devices(api, &filter);
+    let mut devices = snapshot_devices(api, &filter);
+    if let Some(id) = args.id.as_deref().filter(|s| !s.is_empty()) {
+        devices.retain(|d| d.matches_id(id));
+    }
 
     if devices.is_empty() {
         bail!("対象となるlocatorが見つかりませんでした");
@@ -82,7 +85,7 @@ pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Resu
 /// - Output ReportでON/OFF値を送信し、成功したら結果を表示
 pub fn handle_set(api: &HidApi, args: &SetArgs, env: &EnvDefaults, turn_on: bool) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
-    let device = pick_single_device(api, &filter)?;
+    let device = pick_single_device(api, &filter, args.id.as_deref())?;
     let locator_id = device.locator_id();
     let handle = api
         .open_path(device.path.as_c_str())

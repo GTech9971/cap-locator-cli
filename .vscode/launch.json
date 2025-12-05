@@ -20,6 +20,8 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "status",
+                "--id",
+                "${input:locatorId}",
                 "--report-len",
                 "64",
                 "--read-timeout-ms",
@@ -36,6 +38,8 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "on",
+                "--id",
+                "${input:locatorId}",
                 "--report-len",
                 "64",
                 "--on-value",
@@ -52,6 +56,8 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "off",
+                "--id",
+                "${input:locatorId}",
                 "--report-len",
                 "64",
                 "--off-value",
@@ -68,6 +74,8 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "on",
+                "--id",
+                "${input:locatorId}",
                 "--report-len",
                 "64",
                 "--on-value",
@@ -84,6 +92,8 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "on",
+                "--id",
+                "${input:locatorId}",
                 "--report-len",
                 "64",
                 "--on-value",
@@ -92,6 +102,14 @@
             "cwd": "${workspaceFolder}",
             "envFile": "${workspaceFolder}/.env",
             "preLaunchTask": "build"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "locatorId",
+            "type": "promptString",
+            "description": "ターゲットとなるlocatorのid（シリアル番号）",
+            "default": "SN-CAP25001"
         }
     ]
 }
