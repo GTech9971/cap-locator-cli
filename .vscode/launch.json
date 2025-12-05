@@ -14,20 +14,16 @@
             "preLaunchTask": "build"
         },
         {
-            "name": "Locator: status (feature report)",
+            "name": "Locator: status (interrupt IN/OUT)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "status",
-                "--status-index",
-                "2",
-                "--report-id",
-                "0",
-                "--command-status",
-                "1",
                 "--report-len",
-                "64"
+                "64",
+                "--read-timeout-ms",
+                "1000"
             ],
             "cwd": "${workspaceFolder}",
             "envFile": "${workspaceFolder}/.env",
@@ -40,14 +36,10 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "on",
-                "--report-id",
-                "0",
-                "--command-set",
-                "2",
                 "--report-len",
                 "64",
                 "--on-value",
-                "0x0c"
+                "0x1f"
             ],
             "cwd": "${workspaceFolder}",
             "envFile": "${workspaceFolder}/.env",
@@ -60,10 +52,6 @@
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
                 "off",
-                "--report-id",
-                "0",
-                "--command-set",
-                "2",
                 "--report-len",
                 "64",
                 "--off-value",
@@ -74,19 +62,15 @@
             "preLaunchTask": "build"
         },
         {
-            "name": "Locator: LED mask (RC4のみON、RC5 OFF)",
+            "name": "Locator: LED mask (RC4のみON)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
-                "off",
-                "--report-id",
-                "0",
-                "--command-set",
-                "2",
+                "on",
                 "--report-len",
                 "64",
-                "--off-value",
+                "--on-value",
                 "0x04"
             ],
             "cwd": "${workspaceFolder}",
@@ -94,19 +78,15 @@
             "preLaunchTask": "build"
         },
         {
-            "name": "Locator: LED mask (RC5のみON、RC4 OFF)",
+            "name": "Locator: LED mask (RC5のみON)",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/target/debug/cap-locator-cli",
             "args": [
-                "off",
-                "--report-id",
-                "0",
-                "--command-set",
-                "2",
+                "on",
                 "--report-len",
                 "64",
-                "--off-value",
+                "--on-value",
                 "0x08"
             ],
             "cwd": "${workspaceFolder}",

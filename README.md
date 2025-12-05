@@ -40,7 +40,7 @@ cargo run -- list
 cargo run -- status
 ```
 
-`--id <locator-id>` を付けると特定のlocatorだけ確認します。`locator-id` はシリアル番号があればそれを、なければHIDパスを参照します（部分一致も可）。
+フィルタに一致するlocatorをすべて表示します。
 
 ### LED点灯/消灯
 
@@ -52,7 +52,7 @@ cargo run -- on
 cargo run -- off
 ```
 
-`--id` を省略した場合は、フィルタに合致するデバイスが1台ならそれを対象にします（複数見つかったらエラーになるので `--id` で指定してください）。`--on-value` / `--off-value` でRC2〜RC5/RA4のビットマスクを指定できます（デフォルトは0x1f/0x00）。
+フィルタに合致するデバイスが1台ならそれを対象にします。複数見つかった場合はエラーになるので、`--vendor-id` / `--product-id` / `--usage-page` / `--usage` で絞り込んでください。`--on-value` / `--off-value` でRC2〜RC5/RA4のビットマスクを指定できます（デフォルトは0x1f/0x00）。
 
 ## オプション早見表
 

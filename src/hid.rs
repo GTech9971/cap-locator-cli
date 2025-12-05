@@ -48,11 +48,17 @@ impl DeviceDescriptor {
         #[cfg(target_os = "linux")]
         let usage = None;
 
+        // 空文字シリアルは識別に使えないので None 扱いにする
+        let serial_number = info
+            .serial_number()
+            .map(|s| s.to_string())
+            .filter(|s| !s.is_empty());
+
         Self {
             path: info.path().to_owned(),
             vendor_id: info.vendor_id(),
             product_id: info.product_id(),
-            serial_number: info.serial_number().map(|s| s.to_string()),
+            serial_number,
             usage_page,
             usage,
         }
@@ -62,15 +68,6 @@ impl DeviceDescriptor {
         self.serial_number
             .clone()
             .unwrap_or_else(|| self.path.to_string_lossy().into_owned())
-    }
-
-    pub fn matches_id(&self, query: &str) -> bool {
-        let serial_match = self
-            .serial_number
-            .as_ref()
-            .map(|serial| serial == query || serial.contains(query))
-            .unwrap_or(false);
-        serial_match || self.path.to_string_lossy().contains(query)
     }
 }
 
@@ -92,17 +89,14 @@ pub fn snapshot_devices(api: &HidApi, filter: &FilterArgs) -> Vec<DeviceDescript
     devices
 }
 
-pub fn pick_single_device(api: &HidApi, filter: &FilterArgs, id: &str) -> Result<DeviceDescriptor> {
-    let candidates = snapshot_devices(api, filter)
-        .into_iter()
-        .filter(|d| d.matches_id(id))
-        .collect::<Vec<_>>();
+pub fn pick_single_device(api: &HidApi, filter: &FilterArgs) -> Result<DeviceDescriptor> {
+    let candidates = snapshot_devices(api, filter);
 
     match candidates.len() {
-        0 => Err(anyhow!("一致するlocatorがありませんでした: {}", id)),
+        0 => Err(anyhow!("フィルタに一致するlocatorがありませんでした")),
         1 => Ok(candidates.into_iter().next().unwrap()),
         _ => Err(anyhow!(
-            "複数のlocatorが一致しました。vendor/productやusageで絞り込んでください"
+            "複数のlocatorが見つかりました。vendor/productやusageで絞り込んでください"
         )),
     }
 }

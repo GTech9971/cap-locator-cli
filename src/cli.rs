@@ -33,9 +33,6 @@ pub struct ListArgs {
 
 #[derive(Args, Clone, Debug)]
 pub struct StatusArgs {
-    /// locator id (シリアル番号 or HIDデバイスパスの部分文字列)。未指定ならフィルタに一致する全てを表示
-    #[arg(long)]
-    pub id: Option<String>,
     #[command(flatten)]
     pub filter: FilterArgs,
     #[command(flatten)]
@@ -44,9 +41,6 @@ pub struct StatusArgs {
 
 #[derive(Args, Clone, Debug)]
 pub struct SetArgs {
-    /// locator id (シリアル番号 or HIDデバイスパスの部分文字列)
-    #[arg(long)]
-    pub id: String,
     #[command(flatten)]
     pub filter: FilterArgs,
     #[command(flatten)]

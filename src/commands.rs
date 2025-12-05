@@ -19,13 +19,20 @@ pub fn handle_list(api: &HidApi, args: &ListArgs, env: &EnvDefaults) -> Result<(
     }
 
     for device in devices {
+        let locator_id = device.locator_id();
+        let path = device.path.to_string_lossy();
+        let path_suffix = if locator_id == path {
+            String::new()
+        } else {
+            format!(" path={}", path)
+        };
         println!(
-            "id={:<20} vendor=0x{vid:04x} product=0x{pid:04x} usage={usage} path={path}",
-            device.locator_id(),
-            vid = device.vendor_id,
-            pid = device.product_id,
-            usage = format_usage(device.usage_page, device.usage),
-            path = device.path.to_string_lossy(),
+            "id={:<20} vendor=0x{:04x} product=0x{:04x} usage={}{}",
+            locator_id,
+            device.vendor_id,
+            device.product_id,
+            format_usage(device.usage_page, device.usage),
+            path_suffix
         );
     }
     Ok(())
@@ -33,14 +40,11 @@ pub fn handle_list(api: &HidApi, args: &ListArgs, env: &EnvDefaults) -> Result<(
 
 /// 対象locatorのLED点灯状態を問い合わせて表示する
 ///
-/// - .env/CLIのフィルタでデバイスを絞り込み、`id`が指定されていればさらに絞る
+/// - .env/CLIのフィルタでデバイスを絞り込む
 /// - Output Reportでステータスコマンドを送信し、応答(先頭0xff)のLEDマスクで判定
 pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
-    let mut devices = snapshot_devices(api, &filter);
-    if let Some(id) = &args.id {
-        devices.retain(|d| d.matches_id(id));
-    }
+    let devices = snapshot_devices(api, &filter);
 
     if devices.is_empty() {
         bail!("対象となるlocatorが見つかりませんでした");
@@ -61,11 +65,11 @@ pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Resu
             })?;
 
         println!(
-            "id={:<20} status={} mask=0x{mask:02x} raw=[{}]",
+            "id={:<20} status={} mask=0x{mask:02x} raw=[{raw}]",
             locator_id,
             if status.is_on { "on " } else { "off" },
             mask = status.mask,
-            format_bytes(&status.raw)
+            raw = format_bytes(&status.raw)
         );
     }
 
@@ -74,11 +78,11 @@ pub fn handle_status(api: &HidApi, args: &StatusArgs, env: &EnvDefaults) -> Resu
 
 /// 単一のlocatorに対してLED点灯/消灯コマンドを送信する
 ///
-/// - .env/CLIのフィルタでデバイスを検索し、`id`一致が1件になるように要求
+/// - .env/CLIのフィルタでデバイスを検索し、1件に絞れないとエラー
 /// - Output ReportでON/OFF値を送信し、成功したら結果を表示
 pub fn handle_set(api: &HidApi, args: &SetArgs, env: &EnvDefaults, turn_on: bool) -> Result<()> {
     let filter = merge_filter(&args.filter, env);
-    let device = pick_single_device(api, &filter, &args.id)?;
+    let device = pick_single_device(api, &filter)?;
     let locator_id = device.locator_id();
     let handle = api
         .open_path(device.path.as_c_str())
