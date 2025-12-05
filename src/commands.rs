@@ -102,10 +102,19 @@ pub fn handle_set(api: &HidApi, args: &SetArgs, env: &EnvDefaults, turn_on: bool
         )
     })?;
 
+    let status = query_status(&handle, &args.protocol).with_context(|| {
+        format!(
+            "ステータス取得に失敗しました (id={})",
+            locator_id
+        )
+    })?;
+
     println!(
-        "id={:<20} -> {}",
+        "id={:<20} status={} mask=0x{mask:02x} raw=[{raw}]",
         locator_id,
-        if turn_on { "on" } else { "off" }
+        if status.is_on { "on " } else { "off" },
+        mask = status.mask,
+        raw = format_bytes(&status.raw)
     );
     Ok(())
 }
